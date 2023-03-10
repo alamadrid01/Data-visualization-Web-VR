@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useSpring, animated, config } from "@react-spring/three";
 import * as d3 from "d3";
@@ -14,7 +14,7 @@ const PlaneGeometry = ({ position }) => {
 
   return (
     <mesh ref={planeRef} rotation-x={-0.5 * Math.PI} position-z={1}>
-      <planeGeometry color="red" args={[30, 20, 1]} />
+      <planeGeometry color="red" args={[30, 30, 1]} />
       <meshStandardMaterial side={THREE.DoubleSide} />
     </mesh>
   );
@@ -29,9 +29,10 @@ const MappedVariable = ({data, zPos, color, scale}) => {
   const dataSCale = d3.scaleLinear().domain([0, yMax]).range([-0, 50]);
   const yBase = dataSCale(yMax / 200);
 
-  const [activeList, setActiveList] = useState(
+   const [activeList, setActiveList] = useState(
     Array(data.length).fill(false)
   );
+
 
   return(
     <group ref={groupRef}>
@@ -45,7 +46,7 @@ const MappedVariable = ({data, zPos, color, scale}) => {
           setActiveList(newList);
           toast.success(`Symbol: ${data.symbol}, On ${data.dates[i]}, The High Price is ${data.highPrice[i]}, The Low Price is ${data.lowPrice[i]} The Volume is ${data.volume[i]}`);
         }}
-        position={[i * 1.2 - 5.5, yBase * dataSCale(d), (zPos)]}
+        position={[i * 1.2 - 8, yBase * dataSCale(d), (zPos)]}
         scale={[0.25, 1, 0.25]}
       >
         <boxGeometry args={[2, dataSCale(d / 2), 2.5]} />
@@ -58,6 +59,72 @@ const MappedVariable = ({data, zPos, color, scale}) => {
       </mesh>
     ))}
   </group>
+  )
+}
+
+function AxisLabels({data}) {
+
+  const tick = d3.scaleBand().domain(data.dates).range([0, 18]).padding(0.000009);
+
+  return (
+    <>
+  <group>
+    {data.dates.map((label, index) => (
+      <Text
+        key={index}
+        color="purple"
+        fontSize={0.5}
+        position={[tick(label) - 8.5, 0.3, 10]}
+        anchorX="center"
+        anchorY="middle"
+        rotation={[Math.PI * -0.05,  Math.PI * -0.5, Math.PI / 200]}
+      >
+        {label}
+      </Text>
+    ))}
+  </group>
+    </>
+  )
+}
+
+
+const XAxis = ({ticks, tickPositions, tickLabels, labelPosition}) => {
+  const mesh = useRef()
+
+  return (
+    <group ref={mesh}>
+      {ticks.map((tick, i) => (
+        <line
+          key={tick}
+          position={[tickPositions[i][0], tickPositions[i][1], 0]}
+          points={[
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, 0, -0.5),
+          ]}
+        />
+      ))}
+      {tickLabels.map((label, i) => (
+        <Text
+          key={i}
+          color={'red'}
+          anchorX="center"
+          anchorY="top"
+          fontSize={0.4}
+          position={[tickPositions[i][0], tickPositions[i][1] - 0.6, 0]}
+        >
+          {label}
+        </Text>
+      ))}
+      <Text
+        color={'red'}
+        anchorX="center"
+        anchorY="top"
+        fontSize={0.4}
+        position={[labelPosition[0], labelPosition[1], labelPosition[2]]}
+      >
+        X-Axis Label
+      </Text>
+    </group>
   )
 }
 
@@ -256,8 +323,9 @@ function BarChart() {
     <ToastContainer />
       <Canvas style={{ width: "50vw", height: "50vh" }}>
         <OrbitControls ref={controlsRef} />
-        {/* <axesHelper args={[10]} /> */}
+        <axesHelper args={[11, 20]} scale={[1.6, 1, 1]} position={[-8.5, 0 , -3]}/>
         <gridHelper args={[18]} />
+        <AxisLabels data={GoogleData}/>
         <ambientLight intensity={0.1} />
         <directionalLight color="gold" position={[0, 0, 5]} />
      
