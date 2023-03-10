@@ -44,7 +44,7 @@ const MappedVariable = ({data, zPos, color, scale}) => {
           const newList = [...activeList];
           newList[i] = !newList[i];
           setActiveList(newList);
-          toast.success(`Symbol: ${data.symbol}, On ${data.dates[i]}, The High Price is ${data.highPrice[i]}, The Low Price is ${data.lowPrice[i]} The Volume is ${data.volume[i]}`);
+          toast.success(`Symbol: ${data.symbol}, On ${data.dates[i]}, The High Price is ${data.highPrice[i]}, The Low Price is ${data.lowPrice[i]} The Volume is ${data.volume[i]} The Open Price which is displayed is ${d}`);
         }}
         position={[i * 1.2 - 8, yBase * dataSCale(d), (zPos)]}
         scale={[0.25, 1, 0.25]}
@@ -63,8 +63,19 @@ const MappedVariable = ({data, zPos, color, scale}) => {
 }
 
 function AxisLabels({data}) {
+  // const yMin = d3.min(data.openPrice);
+  // const yMax = d3.max(data.openPrice);
+  // const dataScale = d3.scaleLinear().domain([0, yMax]).range([0, 80]);
 
   const tick = d3.scaleBand().domain(data.dates).range([0, 18]).padding(0.000009);
+
+  const xLabels = [
+    { position: [-11.5, 0.2, -2.5], text: 'Google Data' },
+    { position: [-11.5, 0.2, 0.5], text: 'Tesla Data' },
+    { position: [-11.5, 0.2, 2.5], text: 'Twitter Data' },
+    { position: [-11.5, 0.2, 4.5], text: 'Microsoft Data' },
+    { position: [-11.5, 0.2, 6.5], text: 'Apple Data' },
+  ];
 
   return (
     <>
@@ -78,11 +89,43 @@ function AxisLabels({data}) {
         anchorX="center"
         anchorY="middle"
         rotation={[Math.PI * -0.05,  Math.PI * -0.5, Math.PI / 200]}
-      >
+           >
         {label}
+        <meshNormalMaterial />
       </Text>
     ))}
   </group>
+  <group>
+    {xLabels.map((label, index) => (
+      <Text
+        key={index}
+        color="purple"
+        fontSize={0.5}
+        position={label.position}
+        anchorX="center"
+        anchorY="middle"
+           >
+        {label.text}
+        <meshNormalMaterial />
+      </Text>
+    ))}
+  </group>
+  {/* <group>
+    {data.openPrice.map((label, index) => {
+      return (
+        <Text
+        key={index}
+        color="red"
+        fontSize={1}
+        position={[-11.5, dataScale(index), -3]}
+        anchorX="center"
+        anchorY="middle"
+           >
+        {dataScale(yMax - label)}
+        <meshNormalMaterial />
+      </Text>
+    )})}
+  </group> */}
     </>
   )
 }
@@ -139,8 +182,6 @@ function BarChart() {
   const [AppleData, setAppleData] = useState([]);
   const [TwitterData, setTwitterData] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-
   
 
   const endpoint = [
@@ -321,20 +362,20 @@ function BarChart() {
   return (
     <>
     <ToastContainer />
-      <Canvas style={{ width: "50vw", height: "50vh" }}>
+    <Canvas style={{ width: "90vw", height: "100vh" }}  camera={{ position: [0, 0, 40] }}>
         <OrbitControls ref={controlsRef} />
-        <axesHelper args={[11, 20]} scale={[1.6, 1, 1]} position={[-8.5, 0 , -3]}/>
+        <axesHelper args={[11, 20]} scale={[2, 3, 1.2]} position={[-8.5, 0 , -3]}/>
         <gridHelper args={[18]} />
         <AxisLabels data={GoogleData}/>
         <ambientLight intensity={0.1} />
         <directionalLight color="gold" position={[0, 0, 5]} />
      
         <PlaneGeometry />
-        <MappedVariable data={MicrosoftData} zPos={5} color={"red"} scale={GoogleData}/>
         <MappedVariable data={AppleData} zPos={6.5} color={"green"} scale={GoogleData}/>
-        <MappedVariable data={TeslaData} zPos={-0.5} color={"magenta"} scale={GoogleData}/>
-        <MappedVariable data={GoogleData} zPos={-2} color={"blue"} scale={GoogleData}/>
-        <MappedVariable data={TwitterData} zPos={2} color={"orange"} scale={GoogleData}/>
+        <MappedVariable data={MicrosoftData} zPos={4.5} color={"red"} scale={GoogleData}/>
+        <MappedVariable data={TwitterData} zPos={2.5} color={"orange"} scale={GoogleData}/>
+        <MappedVariable data={TeslaData} zPos={0.5} color={"magenta"} scale={GoogleData}/>
+        <MappedVariable data={GoogleData} zPos={-2.5 } color={"blue"} scale={GoogleData}/>
       </Canvas>
     </>
   );
