@@ -5,69 +5,29 @@ import * as THREE from "three";
 import { useSpring, animated, config } from "@react-spring/three";
 import * as d3 from "d3";
 import axios from "axios";
+import {toast, ToastContainer} from "react-toastify"
+import 'react-toastify/dist/ReactToastify.css';
 
-function Box({ position, geometry }) {
-  const [active, setActive] = useState(false);
-  const meshRef = useRef();
-  const { scale } = useSpring({
-    scale: active ? 1.5 : 1,
-    config: config.wobbly,
-  });
-
-  useFrame(({ clock }) => {
-    meshRef.current.rotation.x += 0.01;
-    meshRef.current.rotation.y += 0.01;
-  });
-
-  return (
-    <animated.mesh
-      ref={meshRef}
-      position={position}
-      scale={scale}
-      onClick={() => setActive(!active)}
-    >
-      <boxGeometry args={geometry} />
-      <meshBasicMaterial color="pink" />
-    </animated.mesh>
-  );
-}
-
-const Sphere = ({ position, geometry }) => {
-  const sphereMeshRef = useRef();
-
-  useFrame(({ clock }) => {
-    sphereMeshRef.current.rotation.x += 0.01;
-    sphereMeshRef.current.rotation.y += 0.01;
-  });
-
-  return (
-    <mesh ref={sphereMeshRef} position={position}>
-      <sphereGeometry args={geometry} />
-      <meshStandardMaterial />
-    </mesh>
-  );
-};
 
 const PlaneGeometry = ({ position }) => {
   const planeRef = useRef();
 
   return (
-    <mesh ref={planeRef} rotation-x={-0.5 * Math.PI}>
-      <planeGeometry color="red" args={[12, 12, 3]} />
+    <mesh ref={planeRef} rotation-x={-0.5 * Math.PI} position-z={1}>
+      <planeGeometry color="red" args={[30, 20, 1]} />
       <meshStandardMaterial side={THREE.DoubleSide} />
     </mesh>
   );
 };
 
 
-const MappedVariable = ({data, zPos, color}) => {
-
-  const [active, setActive] = useState(false);
+const MappedVariable = ({data, zPos, color, scale}) => {
   const groupRef = useRef();
+  const mesh = useRef();
 
-  const yMax = d3.max(data);
-  const dataSCale = d3.scaleLinear().domain([0, yMax]).range([0, 3]);
-  const yBase = dataSCale(yMax / 2 + 2);
+  const yMax = d3.max(scale.openPrice);
+  const dataSCale = d3.scaleLinear().domain([0, yMax]).range([-0, 50]);
+  const yBase = dataSCale(yMax / 200);
 
   const [activeList, setActiveList] = useState(
     Array(data.length).fill(false)
@@ -75,22 +35,25 @@ const MappedVariable = ({data, zPos, color}) => {
 
   return(
     <group ref={groupRef}>
-    {data.map((d, i) => (
+    {data.openPrice.map((d, i) => (
       <mesh
         key={i}
+        ref={mesh}
         onClick={() => {
           const newList = [...activeList];
           newList[i] = !newList[i];
           setActiveList(newList);
+          toast.success(`Symbol: ${data.symbol}, On ${data.dates[i]}, The High Price is ${data.highPrice[i]}, The Low Price is ${data.lowPrice[i]} The Volume is ${data.volume[i]}`);
         }}
-        position={[i * 1.2 - 5.5, yBase + dataSCale(i), (zPos)]}
-        scale={[0.25, dataSCale(d / 2), 0.25]}
+        position={[i * 1.2 - 5.5, yBase * dataSCale(d), (zPos)]}
+        scale={[0.25, 1, 0.25]}
       >
-        <boxGeometry args={[2, dataSCale(d), 2.5]} />
+        <boxGeometry args={[2, dataSCale(d / 2), 2.5]} />
         <animated.meshStandardMaterial
           color={color}
-          opacity={activeList[i] ? 0.5 : 1}
+          opacity={activeList[i] ? 0.6 : 1}
           transparent
+          
         />
       </mesh>
     ))}
@@ -98,25 +61,27 @@ const MappedVariable = ({data, zPos, color}) => {
   )
 }
 
+
 function BarChart() {
   const controlsRef = useRef();
 
   const [data, setData] = useState([]);
-  const [IBMdata, setIBMData] = useState([]);
   const [GoogleData, setGoogleData] = useState([]);
   const [TeslaData, setTeslaData] = useState([]);
   const [MicrosoftData, setMicrosoftData] = useState([]);
   const [AppleData, setAppleData] = useState([]);
+  const [TwitterData, setTwitterData] = useState([]);
   const [loading, setLoading] = useState(true);
+  
 
   
 
   const endpoint = [
-    "https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=IBM&apikey=FSLZGW7CI7N7Z555",
     "https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=AAPL&apikey=FSLZGW7CI7N7Z555",
     "https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=GOOGL&apikey=FSLZGW7CI7N7Z555",
     "https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=TSLA&apikey=FSLZGW7CI7N7Z555",
     "https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=MSFT&apikey=FSLZGW7CI7N7Z555",
+    "https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=TWTR&apikey=FSLZGW7CI7N7Z555",
   ];
 
   useEffect(() => {
@@ -125,51 +90,146 @@ function BarChart() {
       const result = JSON.parse(cachedData);
       setLoading(false);
 
+
       if (result[0]) {
         const first = result[0];
-        const monthlyAdjustedTimeSeries = first["Monthly Adjusted Time Series"];
+        const metaData = first["Meta Data"]
+        const newArray = Object.values(metaData)
+        const symbol = newArray[1]
+
+        const monthlyAdjustedTimeSeries =
+          first["Monthly Adjusted Time Series"];
+
+        const dates = Object.keys(monthlyAdjustedTimeSeries);
+
+        const openPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) =>{
+            return parseFloat(item["1. open"])
+          }
+        );
+        const highPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["2. high"])
+        );
+        const lowPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["3. low"])
+        );
         const closePrices = Object.values(monthlyAdjustedTimeSeries).map(
           (item) => parseFloat(item["4. close"])
         );
-        setIBMData(closePrices.slice(0, 10));
+        const volumes = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["6. volume"])
+        );
+        setAppleData({openPrice: openPrices.slice(0, 15),lowPrice: lowPrices.slice(0, 15), highPrice: highPrices.slice(0, 15), closePrice: closePrices.slice(0, 15), volume: volumes.slice(0, 15), dates: dates.slice(0, 15), symbol});
       }
 
       if (result[1]) {
         const second = result[1];
-        const monthlyAdjustedTimeSeries =
-          second["Monthly Adjusted Time Series"];
+        const metaData = second["Meta Data"]
+        const newArray = Object.values(metaData)
+        const symbol = newArray[1]
+
+        // const symbol = Object.values(metaData).map(item => console.log(item["2. Symbol"]))
+        const monthlyAdjustedTimeSeries = second["Monthly Adjusted Time Series"];
+
+        const dates = Object.keys(monthlyAdjustedTimeSeries);
+         const openPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["1. open"])
+        );
+        const highPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["2. high"])
+        );
+        const lowPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["3. low"])
+        );
         const closePrices = Object.values(monthlyAdjustedTimeSeries).map(
           (item) => parseFloat(item["4. close"])
         );
-        setAppleData(closePrices.slice(0, 10));
+        const volumes = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["6. volume"])
+        );
+        setGoogleData({openPrice: openPrices.slice(0, 15),lowPrice: lowPrices.slice(0, 15), highPrice: highPrices.slice(0, 15), closePrice: closePrices.slice(0, 15), volume: volumes.slice(0, 15), dates: dates.slice(0, 15), symbol});
       }
 
       if (result[2]) {
         const third = result[2];
-        const monthlyAdjustedTimeSeries = third["Monthly Adjusted Time Series"];
-        const closePrices = Object.values(monthlyAdjustedTimeSeries).map(
-          (item) => parseFloat(item["4. close"])
+        const metaData = third["Meta Data"]
+        const newArray = Object.values(metaData)
+        const symbol = newArray[1]
+
+        const monthlyAdjustedTimeSeries =
+          third["Monthly Adjusted Time Series"];
+
+          const dates = Object.keys(monthlyAdjustedTimeSeries);
+          const openPrices = Object.values(monthlyAdjustedTimeSeries).map(
+            (item) => parseFloat(item["1. open"])
+          );
+          const highPrices = Object.values(monthlyAdjustedTimeSeries).map(
+            (item) => parseFloat(item["2. high"])
+          );
+          const lowPrices = Object.values(monthlyAdjustedTimeSeries).map(
+            (item) => parseFloat(item["3. low"])
+          );
+          const closePrices = Object.values(monthlyAdjustedTimeSeries).map(
+            (item) => parseFloat(item["4. close"])
+          );
+          const volumes = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["6. volume"])
         );
-        setGoogleData(closePrices.slice(0, 10));
+          setTeslaData({openPrice: openPrices.slice(0, 15),lowPrice: lowPrices.slice(0, 15), highPrice: highPrices.slice(0, 15), closePrice: closePrices.slice(0, 15), volume: volumes.slice(0, 15), dates: dates.slice(0, 15), symbol});
       }
 
       if (result[3]) {
         const fourth = result[3];
-        const monthlyAdjustedTimeSeries =
-          fourth["Monthly Adjusted Time Series"];
+        const metaData = fourth["Meta Data"]
+        const newArray = Object.values(metaData)
+        const symbol = newArray[1]
+
+
+        const monthlyAdjustedTimeSeries = fourth["Monthly Adjusted Time Series"];
+
+        const dates = Object.keys(monthlyAdjustedTimeSeries);
+          const openPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["1. open"])
+        );
+        const highPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["2. high"])
+        );
+        const lowPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["3. low"])
+        );
         const closePrices = Object.values(monthlyAdjustedTimeSeries).map(
           (item) => parseFloat(item["4. close"])
         );
-        setTeslaData(closePrices.slice(0, 10));
+        const volumes = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["6. volume"])
+        );
+        setMicrosoftData({openPrice: openPrices.slice(0, 15),lowPrice: lowPrices.slice(0, 15), highPrice: highPrices.slice(0, 15), closePrice: closePrices.slice(0, 15), volume: volumes.slice(0, 15), dates: dates.slice(0, 15), symbol});
       }
-
       if (result[4]) {
         const fifth = result[4];
+        const metaData = fifth["Meta Data"]
+        const newArray = Object.values(metaData)
+        const symbol = newArray[1]
+
         const monthlyAdjustedTimeSeries = fifth["Monthly Adjusted Time Series"];
+
+        const dates = Object.keys(monthlyAdjustedTimeSeries);
+        const openPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["1. open"])
+        );
+        const highPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["2. high"])
+        );
+        const lowPrices = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["3. low"])
+        );
         const closePrices = Object.values(monthlyAdjustedTimeSeries).map(
           (item) => parseFloat(item["4. close"])
         );
-        setMicrosoftData(closePrices.slice(0, 10));
+        const volumes = Object.values(monthlyAdjustedTimeSeries).map(
+          (item) => parseFloat(item["6. volume"])
+        );
+        setTwitterData({openPrice: openPrices.slice(0, 15),lowPrice: lowPrices.slice(0, 15), highPrice: highPrices.slice(0, 15), closePrice: closePrices.slice(0, 15), volume: volumes.slice(0, 15), dates: dates.slice(0, 15), symbol});
       }
     } else {
       const fetchData = async () => {
@@ -191,30 +251,22 @@ function BarChart() {
   }, []);
 
 
-  //   console.log("IBM", IBMdata);
-  //   console.log("AppleData", AppleData);
-  //   console.log("GoogleData", GoogleData);
-  //   console.log("TeslaData", TeslaData);
-  //   console.log("MicrosoftData", MicrosoftData);
-
   return (
     <>
+    <ToastContainer />
       <Canvas style={{ width: "50vw", height: "50vh" }}>
         <OrbitControls ref={controlsRef} />
-        <axesHelper args={[10]} />
-        <gridHelper args={[15]} />
+        {/* <axesHelper args={[10]} /> */}
+        <gridHelper args={[18]} />
         <ambientLight intensity={0.1} />
         <directionalLight color="gold" position={[0, 0, 5]} />
      
         <PlaneGeometry />
-        {/* <Box position={[0, 0, 0]} geometry={[1, 1, 1]} />
-        <Box position={[-1, 1, 0]} geometry={[1, 1, 1]} /> */}
-        {/* <Sphere position={[-2, 2, 0]} geometry={[1, 1, 1]} /> */}
-        <MappedVariable data={MicrosoftData} zPos={5} color={"red"} />
-        <MappedVariable data={IBMdata} zPos={3.5} color={"yellow"} />
-        <MappedVariable data={AppleData} zPos={2} color={"green"} />
-        <MappedVariable data={GoogleData} zPos={0.5} color={"blue"} />
-        <MappedVariable data={TeslaData} zPos={-1} color={"magenta"} />
+        <MappedVariable data={MicrosoftData} zPos={5} color={"red"} scale={GoogleData}/>
+        <MappedVariable data={AppleData} zPos={6.5} color={"green"} scale={GoogleData}/>
+        <MappedVariable data={TeslaData} zPos={-0.5} color={"magenta"} scale={GoogleData}/>
+        <MappedVariable data={GoogleData} zPos={-2} color={"blue"} scale={GoogleData}/>
+        <MappedVariable data={TwitterData} zPos={2} color={"orange"} scale={GoogleData}/>
       </Canvas>
     </>
   );
