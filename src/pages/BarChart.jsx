@@ -44,7 +44,16 @@ const MappedVariable = ({data, zPos, color, scale}) => {
           const newList = [...activeList];
           newList[i] = !newList[i];
           setActiveList(newList);
-          toast.success(`Symbol: ${data.symbol}, On ${data.dates[i]}, The High Price is ${data.highPrice[i]}, The Low Price is ${data.lowPrice[i]} The Volume is ${data.volume[i]} The Open Price which is displayed is ${d}`);
+          toast.success(
+            <>
+            <h3>Symbol: {data.symbol}</h3>
+            <h4>On {data.dates[i]},</h4>
+            <h4>High price is {data.highPrice[i]}</h4>
+            <h4>Low price is {data.lowPrice[i]}</h4>
+            <h4>Volume traded is {data.volume[i]}</h4>
+            <h4>Open price is {d}</h4>
+            </>
+          );
         }}
         position={[i * 1.2 - 8, yBase * dataSCale(d), (zPos)]}
         scale={[0.25, 1, 0.25]}
@@ -126,6 +135,7 @@ function AxisLabels({data}) {
       </Text>
     )})}
   </group> */}
+
     </>
   )
 }
@@ -171,6 +181,28 @@ const XAxis = ({ticks, tickPositions, tickLabels, labelPosition}) => {
   )
 }
 
+const Legend = () => {
+
+  return(
+    <>
+     <Text position={[18, 10, 1]} color="blue" fontSize={0.7}>
+        GOOGL - Google Data
+      </Text>
+      <Text position={[18, 8.5, 1]} color="orange" fontSize={0.7}>
+        TWTR - Twitter Data
+      </Text>
+      <Text position={[18, 7, 1]} color="red" fontSize={0.7}>
+        MSFT - Microsoft Data
+      </Text>
+      <Text position={[18, 5.5, 1]} color="magenta" fontSize={0.7}>
+        TSLA - Tesla Data
+      </Text>
+      <Text position={[18, 4, 1]} color="green" fontSize={0.7}>
+        AAPL - Apple Data
+      </Text>
+    </>
+  )
+}
 
 function BarChart() {
   const controlsRef = useRef();
@@ -371,6 +403,7 @@ function BarChart() {
         <directionalLight color="gold" position={[0, 0, 5]} />
      
         <PlaneGeometry />
+        <Legend />
         <MappedVariable data={AppleData} zPos={6.5} color={"green"} scale={GoogleData}/>
         <MappedVariable data={MicrosoftData} zPos={4.5} color={"red"} scale={GoogleData}/>
         <MappedVariable data={TwitterData} zPos={2.5} color={"orange"} scale={GoogleData}/>
