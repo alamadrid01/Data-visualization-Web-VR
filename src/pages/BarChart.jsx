@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, Suspense } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { OrbitControls, Text, Environment, Box } from "@react-three/drei";
+import { OrbitControls, Text, Line } from "@react-three/drei";
 import * as THREE from "three";
 import { useSpring, animated, config } from "@react-spring/three";
 import * as d3 from "d3";
@@ -14,7 +14,7 @@ const PlaneGeometry = ({ position }) => {
 
   return (
     <mesh ref={planeRef} rotation-x={-0.5 * Math.PI} position={[0.2, 0, -1]}>
-      <planeGeometry color="red" args={[18, 18, 1]} />
+      <planeGeometry color="red" args={[19, 19, 1]} />
       <meshStandardMaterial side={THREE.DoubleSide} />
     </mesh>
   );
@@ -95,6 +95,38 @@ function AxisLabels({ data }) {
 
   return (
     <>
+      <group>
+        {tickValues.map((item, index) => {
+          // console.log("item", item);
+          // console.log("index", index);
+          return (
+            <Line
+              key={index}
+              points={[
+                [-8.5, labelAxis(item), -3.5],
+                [9.7, labelAxis(item), -3.5],
+              ]}
+              color="gray"
+              linewidth={1}
+            />
+          );
+        })}
+      </group>
+      <group>
+        {tickValues.map((item, index) => {
+          return (
+            <Line
+              key={index}
+              points={[
+                [9.7, labelAxis(item), -3.5],
+                [9.7, labelAxis(item), 7.3],
+              ]}
+              color="gray"
+              linewidth={1}
+            />
+          );
+        })}
+      </group>
       <group>
         {data.dates.map((label, index) => (
           <Text
@@ -184,12 +216,12 @@ const XAxis = ({ ticks, tickPositions, tickLabels, labelPosition }) => {
   );
 };
 
-const Legend = ({xPos}) => {
+const Legend = ({ xPos }) => {
   return (
     <>
       <group rotation={[Math.PI * -0.5, 0, 0]}>
         <Text
-          position={[(xPos), 2, 0.4]}
+          position={[xPos, 2, 0.4]}
           color="blue"
           fontSize={1.2}
           anchorX="left"
@@ -198,7 +230,7 @@ const Legend = ({xPos}) => {
           GOOGL - Google Stock Price
         </Text>
         <Text
-          position={[(xPos), 0.5, 0.4]}
+          position={[xPos, 0.5, 0.4]}
           color="orange"
           fontSize={1.2}
           anchorX="left"
@@ -207,7 +239,7 @@ const Legend = ({xPos}) => {
           TWTR - Twitter Stock Price
         </Text>
         <Text
-          position={[(xPos), -1, 0.4]}
+          position={[xPos, -1, 0.4]}
           color="red"
           fontSize={1.2}
           anchorX="left"
@@ -216,7 +248,7 @@ const Legend = ({xPos}) => {
           MSFT - Microsoft Stock Price
         </Text>
         <Text
-          position={[(xPos), -2.5, 0.4]}
+          position={[xPos, -2.5, 0.4]}
           color="magenta"
           fontSize={1.2}
           anchorX="left"
@@ -225,7 +257,7 @@ const Legend = ({xPos}) => {
           TSLA - Tesla Stock Price
         </Text>
         <Text
-          position={[(xPos), -4, 0.4]}
+          position={[xPos, -4, 0.4]}
           color="green"
           fontSize={1.2}
           anchorX="left"
@@ -237,9 +269,6 @@ const Legend = ({xPos}) => {
     </>
   );
 };
-
-
-
 
 function BarChart() {
   const controlsRef = useRef();
@@ -468,21 +497,35 @@ function BarChart() {
     <>
       <ToastContainer />
       <Canvas
-        style={{ width: "90vw", height: "100vh", background: `url(https://cdn.aframe.io/a-painter/images/sky.jpg)`}}
+        style={{
+          width: "90vw",
+          height: "100vh",
+          background: `url(https://cdn.aframe.io/a-painter/images/sky.jpg)`,
+        }}
         camera={{ position: [0, 0, 40] }}
       >
         <OrbitControls ref={controlsRef} />
         <axesHelper
           args={[11, 20]}
           scale={[1.7, 3, 1]}
-          position={[-8.5, 0, -3]}
+          position={[-8.5, 0, -3.5]}
         />
-        <gridHelper args={[18, 14]} position={[0.2, 0, -1]} />
+        <axesHelper
+          args={[11, 20]}
+          scale={[0, 3, 0]}
+          position={[9.7, 0, -3.5]}
+        />
+        <axesHelper
+          args={[11, 20]}
+          scale={[0, 3, 0]}
+          position={[9.7, 0, 7.3]}
+        />
+        <gridHelper args={[19, 14]} position={[0.2, 0, -1]} />
         <AxisLabels data={GoogleData} />
         <ambientLight intensity={0.1} />
         <directionalLight color="gold" position={[0, 0, 5]} />
         <PlaneGeometry />
-        <Legend xPos={13}/>
+        <Legend xPos={13} />
         <MappedVariable
           data={AppleData}
           zPos={6.5}
