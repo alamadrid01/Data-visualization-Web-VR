@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import React, { useRef, useState, useEffect, useMemo, Suspense } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { OrbitControls, Text, Environment, Box } from "@react-three/drei";
 import * as THREE from "three";
 import { useSpring, animated, config } from "@react-spring/three";
@@ -7,6 +7,7 @@ import * as d3 from "d3";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { TextureLoader } from "three";
 
 const PlaneGeometry = ({ position }) => {
   const planeRef = useRef();
@@ -85,11 +86,11 @@ function AxisLabels({ data }) {
     .padding(0.000009);
 
   const xLabels = [
-    { position: [-11.5, 0.2, -2.5], text: "Google Data" },
-    { position: [-11.5, 0.2, 0.5], text: "Tesla Data" },
-    { position: [-11.5, 0.2, 2.5], text: "Twitter Data" },
-    { position: [-11.5, 0.2, 4.5], text: "Microsoft Data" },
-    { position: [-11.5, 0.2, 6.5], text: "Apple Data" },
+    { position: [-11.5, 0.2, -2.5], text: "Google Stock Price" },
+    { position: [-11.5, 0.2, 0.5], text: "Tesla Stock Price" },
+    { position: [-11.5, 0.2, 2.5], text: "Twitter Stock Price" },
+    { position: [-11.5, 0.2, 4.5], text: "Microsoft Stock Price" },
+    { position: [-11.5, 0.2, 6.5], text: "Apple Stock Price" },
   ];
 
   return (
@@ -194,7 +195,7 @@ const Legend = ({xPos}) => {
           anchorX="left"
           anchorY="left"
         >
-          GOOGL - Google Data
+          GOOGL - Google Stock Price
         </Text>
         <Text
           position={[(xPos), 0.5, 0.4]}
@@ -203,7 +204,7 @@ const Legend = ({xPos}) => {
           anchorX="left"
           anchorY="left"
         >
-          TWTR - Twitter Data
+          TWTR - Twitter Stock Price
         </Text>
         <Text
           position={[(xPos), -1, 0.4]}
@@ -212,7 +213,7 @@ const Legend = ({xPos}) => {
           anchorX="left"
           anchorY="left"
         >
-          MSFT - Microsoft Data
+          MSFT - Microsoft Stock Price
         </Text>
         <Text
           position={[(xPos), -2.5, 0.4]}
@@ -221,7 +222,7 @@ const Legend = ({xPos}) => {
           anchorX="left"
           anchorY="left"
         >
-          TSLA - Tesla Data
+          TSLA - Tesla Stock Price
         </Text>
         <Text
           position={[(xPos), -4, 0.4]}
@@ -230,12 +231,15 @@ const Legend = ({xPos}) => {
           anchorX="left"
           anchorY="left"
         >
-          AAPL - Apple Data
+          AAPL - Apple Stock Price
         </Text>
       </group>
     </>
   );
 };
+
+
+
 
 function BarChart() {
   const controlsRef = useRef();
@@ -464,7 +468,7 @@ function BarChart() {
     <>
       <ToastContainer />
       <Canvas
-        style={{ width: "90vw", height: "100vh" }}
+        style={{ width: "90vw", height: "100vh", background: `url(https://cdn.aframe.io/a-painter/images/sky.jpg)`}}
         camera={{ position: [0, 0, 40] }}
       >
         <OrbitControls ref={controlsRef} />
