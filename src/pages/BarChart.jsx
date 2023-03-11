@@ -50,11 +50,12 @@ const MappedVariable = ({ data, zPos, color, scale }) => {
             toast.success(
               <>
                 <h3>Symbol: {data.symbol}</h3>
-                <h4>{data.dates[i]},</h4>
-                <h4>High price is {data.highPrice[i]}</h4>
+                <h4>Price of stock on {data.dates[i]},</h4>
+                <h4>Opening price: {d}</h4>
+                <h4>Closing price: {data.closePrice[i]}</h4>
                 <h4>Low price is {data.lowPrice[i]}</h4>
-                <h4>Volume traded is {data.volume[i]}</h4>
-                <h4>Open price is {d}</h4>
+                <h4>High price: {data.highPrice[i]}</h4>
+                <h4>Volume traded: {data.volume[i]}</h4>
               </>
             );
           }}
@@ -76,7 +77,7 @@ const MappedVariable = ({ data, zPos, color, scale }) => {
 function AxisLabels({ data }) {
   const yMax = d3.max(data.openPrice);
   const domainMax = Math.ceil(yMax / 100) * 100;
-  const labelAxis = d3.scaleLinear().domain([0, domainMax]).range([0, 25]);
+  const labelAxis = d3.scaleLinear().domain([0, domainMax]).range([0, 26]);
   const tickValues = labelAxis.ticks(10);
 
   const tick = d3
@@ -127,7 +128,7 @@ function AxisLabels({ data }) {
           );
         })}
       </group>
-      <group>
+      <group >
         {data.dates.map((label, index) => (
           <Text
             key={index}
@@ -166,6 +167,23 @@ function AxisLabels({ data }) {
               color="red"
               fontSize={1}
               position={[-10.5, labelAxis(label), -4]}
+              anchorX="center"
+              anchorY="middle"
+            >
+              {label}
+              <meshNormalMaterial />
+            </Text>
+          );
+        })}
+      </group>
+      <group>
+        {tickValues.map((label, index) => {
+          return (
+            <Text
+              key={index}
+              color="red"
+              fontSize={1}
+              position={[11, labelAxis(label), 7.3]}
               anchorX="center"
               anchorY="middle"
             >
